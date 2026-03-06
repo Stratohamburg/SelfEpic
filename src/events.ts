@@ -16,64 +16,68 @@ export const MONSTERS: Record<string, Monster> = {
   minotaur:  { id: 'm_minotaur',  name: 'Minotaur',          hp: 90,  maxHp: 90,  damage: 18, sprite: '🐂' },
 };
 
+const W_DEFAULTS = { rarity: 'common' as const, level: 1, maxLevel: 10, stars: 1 };
+
 // ==========================================
 // 预定义的武器库（10个）
 // ==========================================
 export const WEAPONS: Record<string, Weapon> = {
-  rustySword:    { id: 'w_rusty_sword',    name: 'Rusty Sword',       damage: 15, type: 'physical' },
-  ironAxe:       { id: 'w_iron_axe',       name: 'Iron Axe',          damage: 20, type: 'physical' },
-  magicStaff:    { id: 'w_magic_staff',    name: 'Magic Staff',       damage: 18, type: 'magic',    isRanged: true },
-  vampireDagger: { id: 'w_vampire_dagger', name: 'Vampire Dagger',    damage: 12, type: 'physical', effect: 'lifesteal' },
-  flameSword:    { id: 'w_flame_sword',    name: 'Flame Sword',       damage: 22, type: 'magic' },
-  crossbow:      { id: 'w_crossbow',       name: 'Heavy Crossbow',    damage: 25, type: 'physical', isRanged: true },
-  holyMace:      { id: 'w_holy_mace',      name: 'Holy Mace',         damage: 17, type: 'magic',    effect: 'crit' },
-  poisonBlade:   { id: 'w_poison_blade',   name: 'Poison Blade',      damage: 14, type: 'physical', effect: 'crit' },
-  thunderSpear:  { id: 'w_thunder_spear',  name: 'Thunder Spear',     damage: 28, type: 'magic',    isRanged: true },
-  demonScythe:   { id: 'w_demon_scythe',   name: 'Demon Scythe',      damage: 30, type: 'physical', effect: 'lifesteal' },
+  rustySword:    { ...W_DEFAULTS, id: 'w_rusty_sword',    name: 'Rusty Sword',       damage: 15, type: 'physical' },
+  ironAxe:       { ...W_DEFAULTS, id: 'w_iron_axe',       name: 'Iron Axe',          damage: 20, type: 'physical' },
+  magicStaff:    { ...W_DEFAULTS, id: 'w_magic_staff',    name: 'Magic Staff',       damage: 18, type: 'magic',    isRanged: true },
+  vampireDagger: { ...W_DEFAULTS, id: 'w_vampire_dagger', name: 'Vampire Dagger',    damage: 12, type: 'physical', effect: 'lifesteal' },
+  flameSword:    { ...W_DEFAULTS, id: 'w_flame_sword',    name: 'Flame Sword',       damage: 22, type: 'magic' },
+  crossbow:      { ...W_DEFAULTS, id: 'w_crossbow',       name: 'Heavy Crossbow',    damage: 25, type: 'physical', isRanged: true },
+  holyMace:      { ...W_DEFAULTS, id: 'w_holy_mace',      name: 'Holy Mace',         damage: 17, type: 'magic',    effect: 'crit' },
+  poisonBlade:   { ...W_DEFAULTS, id: 'w_poison_blade',   name: 'Poison Blade',      damage: 14, type: 'physical', effect: 'crit' },
+  thunderSpear:  { ...W_DEFAULTS, id: 'w_thunder_spear',  name: 'Thunder Spear',     damage: 28, type: 'magic',    isRanged: true },
+  demonScythe:   { ...W_DEFAULTS, id: 'w_demon_scythe',   name: 'Demon Scythe',      damage: 30, type: 'physical', effect: 'lifesteal' },
 };
+
+const P_DEFAULTS = { rarity: 'common' as const, level: 1, maxLevel: 10, stars: 1 };
 
 // ==========================================
 // 预定义的宠物库（10个）
 // ==========================================
 export const PETS: Record<string, Pet> = {
   slimey: {
-    id: 'p_slimey', name: 'Slimey', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_slimey', name: 'Slimey', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Tackle', type: 'damage', value: 5, target: 'single', isRanged: false },
   },
   sparky: {
-    id: 'p_sparky', name: 'Sparky', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_sparky', name: 'Sparky', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Spark', type: 'damage', value: 8, target: 'single', isRanged: true },
   },
   leafy: {
-    id: 'p_leafy', name: 'Leafy', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_leafy', name: 'Leafy', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Vine Whip', type: 'damage', value: 6, target: 'single', isRanged: true },
   },
   bubbles: {
-    id: 'p_bubbles', name: 'Bubbles', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_bubbles', name: 'Bubbles', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Water Jet', type: 'damage', value: 7, target: 'single', isRanged: true },
   },
   ember: {
-    id: 'p_ember', name: 'Ember', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_ember', name: 'Ember', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Fireball', type: 'damage', value: 10, target: 'all', isRanged: true },
   },
   medica: {
-    id: 'p_medica', name: 'Medica', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_medica', name: 'Medica', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Heal Pulse', type: 'heal', value: 15, target: 'self', isRanged: false },
   },
   rocky: {
-    id: 'p_rocky', name: 'Rocky', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_rocky', name: 'Rocky', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Rock Throw', type: 'damage', value: 9, target: 'single', isRanged: true },
   },
   shadow: {
-    id: 'p_shadow', name: 'Shadow', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_shadow', name: 'Shadow', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Dark Slash', type: 'damage', value: 11, target: 'single', isRanged: false },
   },
   breezy: {
-    id: 'p_breezy', name: 'Breezy', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_breezy', name: 'Breezy', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Gust', type: 'damage', value: 6, target: 'all', isRanged: true },
   },
   guardian: {
-    id: 'p_guardian', name: 'Guardian', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
+    ...P_DEFAULTS, id: 'p_guardian', name: 'Guardian', stage: 'egg', hunger: 100, mood: 100, exp: 0, maxExp: 50, sprite: '🥚',
     skill: { name: 'Shield Aura', type: 'buff', value: 10, target: 'self', isRanged: false },
   },
 };

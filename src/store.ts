@@ -1,23 +1,27 @@
 import { create } from 'zustand';
-import { Player, Weapon, Pet, Monster, ActionSequence, GameEvent, ResultPopupData } from './types';
+import { Player, Weapon, Pet, Monster, ActionSequence, GameEvent, ResultPopupData, LobbyTab, GachaItem, Material } from './types';
 import { generateRandomEvent } from './events';
+import { performPull, SINGLE_PULL_DIAMONDS, MULTI_PULL_DIAMONDS, SINGLE_PULL_TICKETS, MULTI_PULL_TICKETS } from './gachaConfig';
 
 interface GameState {
   phase: 'LOBBY' | 'EXPLORING' | 'COMBAT' | 'CAMP' | 'DEAD';
-  
+  lobbyTab: LobbyTab;
+  pityCount: number;
+
   player: Player;
   inventory: {
     weapons: Weapon[];
     pets: Pet[];
     items: any[];
+    materials: Material[];
   };
-  
+
   equippedWeapon: Weapon | null;
   sequence: ActionSequence;
-  
+
   currentEvent: GameEvent | null;
   resultPopup: ResultPopupData | null;
-  
+
   combat: {
     monsters: Monster[];
     turn: 'player' | 'enemy';
@@ -32,9 +36,11 @@ interface GameState {
       isRanged?: boolean;
     };
   };
-  
+
   // Actions
   setPhase: (phase: GameState['phase']) => void;
+  setLobbyTab: (tab: LobbyTab) => void;
+  pullGacha: (count: number, useDiamonds: boolean) => GachaItem[];
   startAdventure: () => void;
   triggerEvent: (event: GameEvent) => void;
   generateNextEvent: () => void;
@@ -49,6 +55,7 @@ interface GameState {
   gainPetExp: (amount: number) => void;
   evolvePet: (petId: string) => void;
   upgradeWeapon: () => void;
+  upgradeWeaponById: (weaponId: string) => void;
   nextFloor: () => void;
   resetGame: () => void;
   showResultPopup: (popup: ResultPopupData) => void;
@@ -59,8 +66,13 @@ const initialPlayer: Player = {
   hp: 100,
   maxHp: 100,
   speed: 10,
-  gold: 0,
+  gold: 500,
+  diamonds: 1680,
+  gachaTickets: 10,
   floor: 1,
+  level: 1,
+  exp: 0,
+  maxExp: 100,
 };
 
 const initialWeapon: Weapon = {
@@ -68,6 +80,10 @@ const initialWeapon: Weapon = {
   name: 'Rusty Sword',
   damage: 15,
   type: 'physical',
+  rarity: 'common',
+  level: 1,
+  maxLevel: 10,
+  stars: 1,
 };
 
 const initialPet: Pet = {
@@ -79,6 +95,10 @@ const initialPet: Pet = {
   exp: 0,
   maxExp: 50,
   sprite: '🥚',
+  rarity: 'common',
+  level: 1,
+  maxLevel: 10,
+  stars: 1,
   skill: {
     name: 'Tackle',
     type: 'damage',
@@ -90,23 +110,26 @@ const initialPet: Pet = {
 
 export const useGameStore = create<GameState>((set, get) => ({
   phase: 'LOBBY',
-  
+  lobbyTab: 'adventure',
+  pityCount: 0,
+
   player: { ...initialPlayer },
   inventory: {
     weapons: [initialWeapon],
     pets: [initialPet],
     items: [],
+    materials: [],
   },
-  
+
   equippedWeapon: initialWeapon,
   sequence: [
     { type: 'pet', data: initialPet },
     { type: 'weapon', data: initialWeapon },
   ],
-  
+
   currentEvent: null,
   resultPopup: null,
-  
+
   combat: {
     monsters: [],
     turn: 'player',
@@ -115,8 +138,89 @@ export const useGameStore = create<GameState>((set, get) => ({
     isAutoPlaying: false,
     damageNumbers: [],
   },
-  
+
   setPhase: (phase) => set({ phase }),
+
+  setLobbyTab: (tab) => set({ lobbyTab: tab }),
+
+  pullGacha: (count, useDiamonds) => {
+    const state = get();
+    const totalCost = count === 1
+      ? (useDiamonds ? SINGLE_PULL_DIAMONDS : SINGLE_PULL_TICKETS)
+      : (useDiamonds ? MULTI_PULL_DIAMONDS : MULTI_PULL_TICKETS);
+
+    if (useDiamonds && state.player.diamonds < totalCost) return [];
+    if (!useDiamonds && state.player.gachaTickets < totalCost) return [];
+
+    const results: GachaItem[] = [];
+    let currentPity = state.pityCount;
+    const newWeapons: Weapon[] = [];
+    const newPets: Pet[] = [];
+    const newMaterials: Material[] = [...state.inventory.materials];
+
+    for (let i = 0; i < count; i++) {
+      const { item, newPityCount } = performPull(currentPity);
+      currentPity = newPityCount;
+      results.push(item);
+
+      if (item.type === 'weapon' && item.weaponData) {
+        newWeapons.push({
+          id: `${item.id}_${Date.now()}_${i}`,
+          name: item.name,
+          damage: item.weaponData.damage ?? 20,
+          type: item.weaponData.type ?? 'physical',
+          effect: item.weaponData.effect,
+          isRanged: item.weaponData.isRanged,
+          rarity: item.rarity,
+          level: 1,
+          maxLevel: 10,
+          stars: 1,
+        });
+      } else if (item.type === 'pet') {
+        newPets.push({
+          id: `${item.id}_${Date.now()}_${i}`,
+          name: item.name,
+          stage: 'egg',
+          hunger: 100,
+          mood: 100,
+          exp: 0,
+          maxExp: 50,
+          sprite: item.icon,
+          rarity: item.rarity,
+          level: 1,
+          maxLevel: 10,
+          stars: 1,
+          skill: { name: 'Tackle', type: 'damage', value: 5, target: 'single' },
+        });
+      } else {
+        // Material
+        const matType = item.type as Material['type'];
+        const existing = newMaterials.findIndex(m => m.id === item.id);
+        if (existing >= 0) {
+          newMaterials[existing] = { ...newMaterials[existing], quantity: newMaterials[existing].quantity + 1 };
+        } else {
+          newMaterials.push({ id: item.id, name: item.name, type: matType, quantity: 1, rarity: item.rarity, icon: item.icon });
+        }
+      }
+    }
+
+    set((s) => ({
+      pityCount: currentPity,
+      player: {
+        ...s.player,
+        diamonds: useDiamonds ? s.player.diamonds - totalCost : s.player.diamonds,
+        gachaTickets: !useDiamonds ? s.player.gachaTickets - totalCost : s.player.gachaTickets,
+      },
+      inventory: {
+        ...s.inventory,
+        weapons: [...s.inventory.weapons, ...newWeapons],
+        pets: [...s.inventory.pets, ...newPets],
+        materials: newMaterials,
+      },
+    }));
+
+    return results;
+  },
   
   startAdventure: () => {
     set({ phase: 'EXPLORING' });
@@ -448,29 +552,56 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   upgradeWeapon: () => set((state) => {
     if (!state.equippedWeapon) return state;
-    
-    const upgradedWeapon = {
-      ...state.equippedWeapon,
-      damage: state.equippedWeapon.damage + 5,
-      name: state.equippedWeapon.name.includes('+') 
-        ? state.equippedWeapon.name.replace(/\+\d+/, (match) => `+${parseInt(match.slice(1)) + 1}`)
-        : `${state.equippedWeapon.name} +1`
+    const w = state.equippedWeapon;
+    const cost = 100 + w.level * 50;
+    if (state.player.gold < cost) return state;
+
+    const upgradedWeapon: Weapon = {
+      ...w,
+      damage: w.damage + 5,
+      level: w.level + 1,
+      name: w.name.includes('+')
+        ? w.name.replace(/\+\d+/, (match) => `+${parseInt(match.slice(1)) + 1}`)
+        : `${w.name} +1`,
     };
 
-    const updatedWeapons = state.inventory.weapons.map(w => 
-      w.id === upgradedWeapon.id ? upgradedWeapon : w
+    const updatedWeapons = state.inventory.weapons.map(x => x.id === upgradedWeapon.id ? upgradedWeapon : x);
+    const updatedSequence = state.sequence.map(node =>
+      node.type === 'weapon' && node.data.id === upgradedWeapon.id ? { ...node, data: upgradedWeapon } : node
     );
-
-    const updatedSequence = state.sequence.map(node => 
-      node.type === 'weapon' && node.data.id === upgradedWeapon.id 
-        ? { ...node, data: upgradedWeapon } 
-        : node
-    );
-
     return {
+      player: { ...state.player, gold: state.player.gold - cost },
       equippedWeapon: upgradedWeapon,
       inventory: { ...state.inventory, weapons: updatedWeapons },
-      sequence: updatedSequence
+      sequence: updatedSequence,
+    };
+  }),
+
+  upgradeWeaponById: (weaponId) => set((state) => {
+    const w = state.inventory.weapons.find(x => x.id === weaponId);
+    if (!w) return state;
+    const cost = 100 + w.level * 50;
+    if (state.player.gold < cost) return state;
+
+    const upgraded: Weapon = {
+      ...w,
+      damage: w.damage + 5,
+      level: w.level + 1,
+      name: w.name.includes('+')
+        ? w.name.replace(/\+\d+/, (match) => `+${parseInt(match.slice(1)) + 1}`)
+        : `${w.name} +1`,
+    };
+
+    const updatedWeapons = state.inventory.weapons.map(x => x.id === weaponId ? upgraded : x);
+    const updatedSequence = state.sequence.map(node =>
+      node.type === 'weapon' && node.data.id === weaponId ? { ...node, data: upgraded } : node
+    );
+    const newEquipped = state.equippedWeapon?.id === weaponId ? upgraded : state.equippedWeapon;
+    return {
+      player: { ...state.player, gold: state.player.gold - cost },
+      equippedWeapon: newEquipped,
+      inventory: { ...state.inventory, weapons: updatedWeapons },
+      sequence: updatedSequence,
     };
   }),
 
@@ -480,13 +611,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   
   resetGame: () => set({
     phase: 'LOBBY',
+    lobbyTab: 'adventure',
+    pityCount: 0,
     player: { ...initialPlayer },
-    inventory: { weapons: [initialWeapon], pets: [initialPet], items: [] },
+    inventory: { weapons: [initialWeapon], pets: [initialPet], items: [], materials: [] },
     equippedWeapon: initialWeapon,
     sequence: [{ type: 'pet', data: initialPet }, { type: 'weapon', data: initialWeapon }],
     currentEvent: null,
     resultPopup: null,
-    combat: { monsters: [], turn: 'player', currentActionIndex: 0, logs: [], isAutoPlaying: false, damageNumbers: [] }
+    combat: { monsters: [], turn: 'player', currentActionIndex: 0, logs: [], isAutoPlaying: false, damageNumbers: [] },
   }),
 
   showResultPopup: (popup) => set({ resultPopup: popup }),

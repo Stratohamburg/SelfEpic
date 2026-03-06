@@ -10,7 +10,7 @@ function App() {
   const { phase, resultPopup } = useGameStore();
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 font-sans">
+    <div className="w-full h-full bg-black flex items-center justify-center font-sans">
       <div className="mobile-container relative bg-gray-900 overflow-hidden shadow-2xl">
         {phase !== 'LOBBY' && <HUD />}
         
